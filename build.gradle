@@ -1,0 +1,80 @@
+/**
+ * Copyright © 2021 kafka-pxf-connector
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.10.0'
+    }
+}
+subprojects {
+
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'license'
+
+    group = 'org.greenplum.pxf'
+    sourceCompatibility = 1.8
+
+    ext {
+        pxfVersion = '5.14.0'
+        avroVersion = '1.9.2'
+        kafkaVersion = '2.5.0'
+        hadoopVersion = '2.9.2'
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+        jcenter()
+    }
+
+    dependencies {
+        implementation "org.greenplum.pxf.api:pxf-api:${pxfVersion}"
+        runtimeOnly "org.greenplum.pxf.service:pxf-service:${pxfVersion}" // for debug
+        implementation "org.apache.hadoop:hadoop-common:${hadoopVersion}"
+        implementation "org.apache.avro:avro:${avroVersion}"
+        testCompile "junit:junit:4.11"
+        testImplementation 'org.mockito:mockito-core:2.22.0'
+    }
+
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+}
+
+project('pxf-kafka') {
+    dependencies {
+        implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    }
+    license {
+        header rootProject.file('license-header.txt')
+        strictCheck true
+    }
+    task copyDeps(type: Copy) {
+        from configurations.default
+        into "${buildDir}/libs"
+    }
+    assemble.dependsOn(copyDeps)
+}
+
+project.version = project.hasProperty('project_version') ? project.project_version : '1.0.0'
